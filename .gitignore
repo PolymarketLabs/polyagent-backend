@@ -1,0 +1,12 @@
+.DS_Store
+.idea
+build/
+/local
+logs/
+/src/logs
+.VSCodeCounter/
+.history/
+.vscode/
+tmp
+cli/logs
+.history

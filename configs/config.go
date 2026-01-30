@@ -2,6 +2,7 @@ package configs
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/spf13/viper"
 )
@@ -12,6 +13,10 @@ type Config struct {
 	Redis    RedisConfig    `mapstructure:"redis"`
 	Ethereum EthereumConfig `mapstructure:"ethereum"`
 	AI       AIConfig       `mapstructure:"ai"`
+
+	WorkerCount           int
+	RealtimeCheckInterval time.Duration
+	Polymarket            PolymarketConfig
 }
 
 type ServerConfig struct {
@@ -20,10 +25,10 @@ type ServerConfig struct {
 }
 
 type DatabaseConfig struct {
-	DSN                    string `mapstructure:"dsn"`                       // 数据库连接字符串
-	MaxOpenConns           int    `mapstructure:"max_open_conns"`            // 最大打开连接数
-	MaxIdleConns           int    `mapstructure:"max_idle_conns"`            // 最大空闲连接数
-	ConnMaxLifetimeMinutes int    `mapstructure:"conn_max_lifetime_minutes"` // 连接最大生命周期（分钟）
+	DSN                    string        `mapstructure:"dsn"`                       // 数据库连接字符串
+	MaxOpenConns           int           `mapstructure:"max_open_conns"`            // 最大打开连接数
+	MaxIdleConns           int           `mapstructure:"max_idle_conns"`            // 最大空闲连接数
+	ConnMaxLifetimeMinutes time.Duration `mapstructure:"conn_max_lifetime_minutes"` // 连接最大生命周期（分钟）
 }
 
 type RedisConfig struct {
@@ -39,7 +44,16 @@ type EthereumConfig struct {
 
 type AIConfig struct {
 	OpenAIApiKey string `mapstructure:"openai_api_key"` // OpenAI API 密钥
-	Model        string `mapstructure:"model"`          // 使用的模型名称
+	Model        string `mapstructure:"models"`         // 使用的模型名称
+}
+
+// PolymarketConfig Polymarket配置
+type PolymarketConfig struct {
+	BaseURL    string
+	APIKey     string
+	APISecret  string
+	Passphrase string
+	PrivateKey string
 }
 
 func LoadConfig(path string) (*Config, error) {

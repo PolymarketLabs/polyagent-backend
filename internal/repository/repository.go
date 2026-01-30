@@ -2,11 +2,17 @@
 package repository
 
 import (
+	"context"
+	"fmt"
 	"polyagent-backend/configs"
+	models "polyagent-backend/internal/models"
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+	"gorm.io/gorm/schema"
 )
 
 const (
@@ -46,17 +52,42 @@ type Intent struct {
 	TxHash    string `gorm:"uniqueIndex;default:null"` // Polymarket 成交后的交易哈希
 }
 
+// Repository 数据访问接口
+type Repository interface {
+	// Fund operations
+	GetFund(ctx context.Context, id uuid.UUID) (*models.Fund, error)
+	GetActiveFunds(ctx context.Context) ([]models.Fund, error)
+	UpdateFund(ctx context.Context, fund *models.Fund) error
+
+	// Trade intent operations
+	CreateTradeIntent(ctx context.Context, intent *models.TradeIntent) error
+	GetTradeIntent(ctx context.Context, id uuid.UUID) (*models.TradeIntent, error)
+	GetPendingIntents(ctx context.Context, limit int) ([]models.TradeIntent, error)
+	GetStaleApprovedIntents(ctx context.Context, staleTime time.Duration, limit int) ([]models.TradeIntent, error)
+	UpdateTradeIntent(ctx context.Context, intent *models.TradeIntent) error
+
+	// Position operations
+	GetFundPositions(ctx context.Context, fundID uuid.UUID) ([]models.Position, error)
+	GetPosition(ctx context.Context, fundID uuid.UUID, marketID, outcomeID string) (*models.Position, error)
+	SavePosition(ctx context.Context, position *models.Position) error
+	GetAllPositions(ctx context.Context) ([]models.Position, error)
+
+	// Risk operations
+	GetActiveRiskRules(ctx context.Context, fundID uuid.UUID) ([]models.RiskRule, error)
+	GetRiskRulesByType(ctx context.Context, fundID uuid.UUID, ruleType models.RiskRuleType) ([]models.RiskRule, error)
+	CreateRiskEvent(ctx context.Context, event *models.RiskEvent) error
+	CreateAuditLog(ctx context.Context, log *models.AuditLog) error
+
+	// Market operations
+	GetActiveMarkets(ctx context.Context) ([]models.MarketData, error)
+
+	// Close database connection
+	Close() error
+}
+
 // 初始化数据库连接
-
-func InitRepository(conf *configs.DatabaseConfig) error {
-	dbCfg := DBConfig{
-		DSN:             conf.DSN,
-		MaxOpenConns:    conf.MaxOpenConns,
-		MaxIdleConns:    conf.MaxIdleConns,
-		ConnMaxLifetime: time.Duration(conf.ConnMaxLifetimeMinutes) * time.Minute,
-	}
-
-	db, err := NewPostgresDB(dbCfg)
+func InitRepository(conf configs.DatabaseConfig) error {
+	db, err := NewPostgresDB(conf)
 	if err != nil {
 		return err
 	}
@@ -70,17 +101,8 @@ func InitRepository(conf *configs.DatabaseConfig) error {
 }
 
 // --- 1. 数据库基础配置与连接池 ---
-
-// DBConfig 数据库配置结构
-type DBConfig struct {
-	DSN             string
-	MaxOpenConns    int
-	MaxIdleConns    int
-	ConnMaxLifetime time.Duration
-}
-
 // NewPostgresDB 初始化 PostgreSQL 连接并配置连接池
-func NewPostgresDB(cfg DBConfig) (*gorm.DB, error) {
+func NewPostgresDB(cfg configs.DatabaseConfig) (*gorm.DB, error) {
 	db, err := gorm.Open(postgres.Open(cfg.DSN), &gorm.Config{
 		PrepareStmt: true, // 开启预编译语句，提高重复执行 SQL 的性能
 	})
@@ -96,7 +118,130 @@ func NewPostgresDB(cfg DBConfig) (*gorm.DB, error) {
 	// 配置连接池，防止高并发时数据库过载
 	sqlDB.SetMaxOpenConns(cfg.MaxOpenConns)
 	sqlDB.SetMaxIdleConns(cfg.MaxIdleConns)
-	sqlDB.SetConnMaxLifetime(cfg.ConnMaxLifetime)
+	sqlDB.SetConnMaxLifetime(cfg.ConnMaxLifetimeMinutes)
 
 	return db, nil
+}
+
+func NewPostgresRepository(cfg configs.DatabaseConfig) (Repository, error) {
+	db, err := gorm.Open(postgres.Open(cfg.DSN), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+		NamingStrategy: schema.NamingStrategy{
+			SingularTable: true,
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("连接数据库失败: %w", err)
+	}
+
+	// 自动迁移
+	if err := db.AutoMigrate(
+		&models.Fund{},
+		&models.TradeIntent{},
+		&models.Position{},
+		&models.RiskRule{},
+		&models.RiskEvent{},
+		&models.AuditLog{},
+		&models.MarketData{},
+	); err != nil {
+		return nil, fmt.Errorf("数据库迁移失败: %w", err)
+	}
+
+	return &postgresRepository{db: db}, nil
+}
+
+// postgresRepository 实现
+type postgresRepository struct {
+	db *gorm.DB
+}
+
+// TODO
+func (p postgresRepository) GetFund(ctx context.Context, id uuid.UUID) (*models.Fund, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p postgresRepository) GetActiveFunds(ctx context.Context) ([]models.Fund, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p postgresRepository) UpdateFund(ctx context.Context, fund *models.Fund) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p postgresRepository) CreateTradeIntent(ctx context.Context, intent *models.TradeIntent) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p postgresRepository) GetTradeIntent(ctx context.Context, id uuid.UUID) (*models.TradeIntent, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p postgresRepository) GetPendingIntents(ctx context.Context, limit int) ([]models.TradeIntent, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p postgresRepository) GetStaleApprovedIntents(ctx context.Context, staleTime time.Duration, limit int) ([]models.TradeIntent, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p postgresRepository) UpdateTradeIntent(ctx context.Context, intent *models.TradeIntent) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p postgresRepository) GetFundPositions(ctx context.Context, fundID uuid.UUID) ([]models.Position, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p postgresRepository) GetPosition(ctx context.Context, fundID uuid.UUID, marketID, outcomeID string) (*models.Position, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p postgresRepository) SavePosition(ctx context.Context, position *models.Position) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p postgresRepository) GetAllPositions(ctx context.Context) ([]models.Position, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p postgresRepository) GetActiveRiskRules(ctx context.Context, fundID uuid.UUID) ([]models.RiskRule, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p postgresRepository) GetRiskRulesByType(ctx context.Context, fundID uuid.UUID, ruleType models.RiskRuleType) ([]models.RiskRule, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p postgresRepository) CreateRiskEvent(ctx context.Context, event *models.RiskEvent) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p postgresRepository) CreateAuditLog(ctx context.Context, log *models.AuditLog) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p postgresRepository) GetActiveMarkets(ctx context.Context) ([]models.MarketData, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p postgresRepository) Close() error {
+	//TODO implement me
+	panic("implement me")
 }

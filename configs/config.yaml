@@ -5,7 +5,7 @@ server:
   mode: "debug" # 运行模式：debug、release
 
 database:
-  dsn: localhost      # 数据库连接字符串
+  dsn: postgresql://postgres:polyagent-backend@db.zcaifpqhmknoldtzvpaa.supabase.co:5432/postgres      # 数据库连接字符串
   max_open_conns: 50  # 最大打开连接数
   max_idle_conns: 10 # 最大空闲连接数
   conn_max_lifetime_minutes: 30 # 连接最大生命周期（分钟）
@@ -22,3 +22,10 @@ ethereum:
 ai:
   openai_api_key: "" # OpenAI API 密钥
   model: "gpt-4" # 使用的模型名称
+
+polymarket:
+  base_url: "https://clob.polymarket.com"
+  api_key:      # 派生得到的 apiKey
+  api_secret:   # 派生得到的 secret
+  passphrase:   # 派生得到的 passphrase
+  private_key:  # 你的 Polygon 钱包私钥（64 位 hex）
