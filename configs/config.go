@@ -2,6 +2,7 @@ package configs
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/spf13/viper"
 )
@@ -12,6 +13,10 @@ type Config struct {
 	Redis    RedisConfig    `mapstructure:"redis"`
 	Ethereum EthereumConfig `mapstructure:"ethereum"`
 	AI       AIConfig       `mapstructure:"ai"`
+
+	WorkerCount           int
+	RealtimeCheckInterval time.Duration
+	Polymarket            PolymarketConfig
 }
 
 type ServerConfig struct {
@@ -41,7 +46,16 @@ type EthereumConfig struct {
 
 type AIConfig struct {
 	OpenAIApiKey string `mapstructure:"openai_api_key"` // OpenAI API 密钥
-	Model        string `mapstructure:"model"`          // 使用的模型名称
+	Model        string `mapstructure:"models"`         // 使用的模型名称
+}
+
+// PolymarketConfig Polymarket配置
+type PolymarketConfig struct {
+	BaseURL    string
+	APIKey     string
+	APISecret  string
+	Passphrase string
+	PrivateKey string
 }
 
 func LoadConfig(path string) (*Config, error) {

@@ -24,3 +24,10 @@ ethereum:
 ai:
   openai_api_key: "" # OpenAI API 密钥
   model: "gpt-4" # 使用的模型名称
+
+polymarket:
+  base_url: "https://clob.polymarket.com"
+  api_key:      # 派生得到的 apiKey
+  api_secret:   # 派生得到的 secret
+  passphrase:   # 派生得到的 passphrase
+  private_key:  # 你的 Polygon 钱包私钥（64 位 hex）
