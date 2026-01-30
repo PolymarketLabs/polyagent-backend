@@ -20,16 +20,18 @@ type ServerConfig struct {
 }
 
 type DatabaseConfig struct {
-	DSN                    string `mapstructure:"dsn"`                       // 数据库连接字符串
-	MaxOpenConns           int    `mapstructure:"max_open_conns"`            // 最大打开连接数
-	MaxIdleConns           int    `mapstructure:"max_idle_conns"`            // 最大空闲连接数
-	ConnMaxLifetimeMinutes int    `mapstructure:"conn_max_lifetime_minutes"` // 连接最大生命周期（分钟）
+	DSN             string `mapstructure:"dsn"`                       // 数据库连接字符串
+	MaxOpenConns    int    `mapstructure:"max_open_conns"`            // 最大打开连接数
+	MaxIdleConns    int    `mapstructure:"max_idle_conns"`            // 最大空闲连接数
+	ConnMaxLifetime int    `mapstructure:"conn_max_lifetime_minutes"` // 连接最大生命周期（分钟）
 }
 
 type RedisConfig struct {
-	Address  string `mapstructure:"address"`  // Redis 服务器地址
-	Password string `mapstructure:"password"` // Redis 连接密码
-	DB       int    `mapstructure:"db"`       // Redis 数据库编号
+	Address      string `mapstructure:"address"`        // Redis 服务器地址
+	Password     string `mapstructure:"password"`       // Redis 连接密码
+	DB           int    `mapstructure:"db"`             // Redis 数据库编号
+	PoolSize     int    `mapstructure:"pool_size"`      // 连接池最大连接数
+	MinIdleConns int    `mapstructure:"min_idle_conns"` // 最小空闲连接数 (保持热连接)
 }
 
 type EthereumConfig struct {

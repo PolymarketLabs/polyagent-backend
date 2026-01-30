@@ -48,15 +48,8 @@ type Intent struct {
 
 // 初始化数据库连接
 
-func InitRepository(conf *configs.DatabaseConfig) error {
-	dbCfg := DBConfig{
-		DSN:             conf.DSN,
-		MaxOpenConns:    conf.MaxOpenConns,
-		MaxIdleConns:    conf.MaxIdleConns,
-		ConnMaxLifetime: time.Duration(conf.ConnMaxLifetimeMinutes) * time.Minute,
-	}
-
-	db, err := NewPostgresDB(dbCfg)
+func InitRepository(conf configs.DatabaseConfig) error {
+	db, err := NewPostgresDB(conf)
 	if err != nil {
 		return err
 	}
@@ -69,8 +62,6 @@ func InitRepository(conf *configs.DatabaseConfig) error {
 	return nil
 }
 
-// --- 1. 数据库基础配置与连接池 ---
-
 // DBConfig 数据库配置结构
 type DBConfig struct {
 	DSN             string
@@ -80,7 +71,7 @@ type DBConfig struct {
 }
 
 // NewPostgresDB 初始化 PostgreSQL 连接并配置连接池
-func NewPostgresDB(cfg DBConfig) (*gorm.DB, error) {
+func NewPostgresDB(cfg configs.DatabaseConfig) (*gorm.DB, error) {
 	db, err := gorm.Open(postgres.Open(cfg.DSN), &gorm.Config{
 		PrepareStmt: true, // 开启预编译语句，提高重复执行 SQL 的性能
 	})
@@ -96,7 +87,7 @@ func NewPostgresDB(cfg DBConfig) (*gorm.DB, error) {
 	// 配置连接池，防止高并发时数据库过载
 	sqlDB.SetMaxOpenConns(cfg.MaxOpenConns)
 	sqlDB.SetMaxIdleConns(cfg.MaxIdleConns)
-	sqlDB.SetConnMaxLifetime(cfg.ConnMaxLifetime)
+	sqlDB.SetConnMaxLifetime(time.Duration(cfg.ConnMaxLifetime) * time.Minute)
 
 	return db, nil
 }

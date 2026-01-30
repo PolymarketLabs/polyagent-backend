@@ -5,15 +5,17 @@ server:
   mode: "debug" # 运行模式：debug、release
 
 database:
-  dsn: localhost      # 数据库连接字符串
+  dsn: "postgresql://admin:securepass@localhost:5432/appdb"      # 数据库连接字符串
   max_open_conns: 50  # 最大打开连接数
   max_idle_conns: 10 # 最大空闲连接数
   conn_max_lifetime_minutes: 30 # 连接最大生命周期（分钟）
 
 redis:
   address: "localhost:6379" # Redis 服务器地址
-  password: "" # Redis 连接密码
+  password: "myredispass112233" # Redis 连接密码
   db: 0 # Redis 数据库编号
+  pool_size: 20 # 连接池最大连接数
+  min_idle_conns: 5 # 最小空闲连接数 (保持热连接)
 
 ethereum:
   rpc_url: "http://localhost:8545" # Ethereum 节点的 RPC URL

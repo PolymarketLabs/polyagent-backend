@@ -1,0 +1,21 @@
+# docker-compose -f .\configs\docker-compose.yml up -d  部署
+version: '3.8'
+services:
+ postgres:
+   image: postgres:15
+   container_name: pg-service
+   environment:
+     POSTGRES_USER: admin
+     POSTGRES_PASSWORD: securepass
+     POSTGRES_DB: appdb
+   ports:
+     - "5432:5432"
+    
+ redis:
+    image: redis:7
+    container_name: redis-service
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass myredispass112233
+      
+    

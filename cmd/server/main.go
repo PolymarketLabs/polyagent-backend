@@ -1,42 +1,33 @@
 package main
 
-import (
-	"fmt"
-	"log"
-	"polyagent-backend/configs"
-)
-
 const configPath = "configs/config.yaml"
 
 func main() {
-	// load configuration, initialize services, middleware, and routes here
+	// // 1. 初始化基础组件 (底层)
+	// logger, _ := zap.NewProduction()
+	// db := database.InitDB()
+	// cfg := config.Load()
 
-	//load configuration (configPath)
-	conf, err := configs.LoadConfig(configPath)
-	if err != nil {
-		log.Fatalf("Failed to load config: %v", err)
-	}
-	fmt.Printf("Loaded config: %+v\n", conf)
-	//initialize database
+	// // 2. 初始化 Repository/Service (中间层)
+	// userRepo := repository.NewUserRepository(db)
+	// userService := service.NewUserService(userRepo)
 
-	//initialize services
-	// 将数据库实例传给 service，实现“解耦”
-	// userSvc := service.NewUserService(db)
-	// orderSvc := service.NewOrderService(db)
+	// // 3. 初始化 Controller (顶层)
+	// // 此时将 service 注入到 controller 中
+	// authCtrl := controller.NewAuthController(userService, logger)
+	// fundCtrl := controller.NewFundController(db)
+	// // ... 其他控制器同理
 
-	//initialize middleware
+	// // 4. 调用 SetupRouter 并注入所有 Controller
+	// r := router.SetupRouter(
+	//     logger,
+	//     cfg.JWTSecret,
+	//     authCtrl,
+	//     fundCtrl,
+	//     intentCtrl,
+	//     investorCtrl,
+	// )
 
-	//initialize routes
-
-	// Start HTTP server
-
-	// http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-	// 	fmt.Fprintf(w, "PolyAgent Backend is running")
-	// })
-
-	// port := ":8080"
-	// log.Printf("Server starting on port %s", port)
-	// if err := http.ListenAndServe(port, nil); err != nil {
-	// 	log.Fatal(err)
-	// }
+	// // 5. 启动服务
+	// r.Run(":8080")
 }
