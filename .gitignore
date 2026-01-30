@@ -1,0 +1,37 @@
+# --- 编译二进制文件 ---
+bin/
+# 常见的 Windows/Linux/Mac 执行文件
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+# Gin 项目编译后的二进制名（假设你编译出的文件名叫 main）
+main
+server
+
+# --- 依赖管理 ---
+# 建议保留 go.mod 和 go.sum，但忽略 vendor 目录
+# 如果你强制使用 vendor 模式，则删除下面这一行
+vendor/
+
+# --- 环境变量与密钥 (非常重要！) ---
+.env
+*.pem
+*.key
+
+# --- 运行日志与临时文件 ---
+*.log
+tmp/
+# 如果你使用了像 air 这样的热重载工具
+/tmp
+
+# --- 单元测试相关 ---
+*.out
+*.test
+
+# --- IDE/编辑器特定文件 ---
+.vscode/
+.idea/
+*.swp
+.DS_Store
