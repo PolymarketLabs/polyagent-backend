@@ -555,7 +555,7 @@ components:
           holdingAmount: 180000
           ratioPct: 0.18
 
-    FundSubscriptionRedemptionRecordResponse:
+    FundDepositRedemptionRecordResponse:
       type: object
       required: [id, date, type, investor, amount, shares, status]
       properties:
@@ -569,8 +569,8 @@ components:
           description: 日期
         type:
           type: string
-          description: 记录类型（SUBSCRIPTION=申购，REDEMPTION=赎回）
-          enum: [SUBSCRIPTION, REDEMPTION]
+          description: 记录类型（DEPOSIT=申购，REDEMPTION=赎回）
+          enum: [DEPOSIT, REDEMPTION]
         investor:
           $ref: '#/components/schemas/AddressResponse'
         amount:
@@ -586,7 +586,7 @@ components:
       examples:
         - id: 5001
           date: "2026-02-10"
-          type: SUBSCRIPTION
+          type: DEPOSIT
           investor: "0xbbb222..."
           amount: 50000
           shares: 45231.8
@@ -614,14 +614,14 @@ components:
         pagination:
           $ref: '#/components/schemas/PaginationResponse'
 
-    FundSubscriptionRedemptionRecordListResponse:
+    FundDepositRedemptionRecordListResponse:
       type: object
       required: [items, pagination]
       properties:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/FundSubscriptionRedemptionRecordResponse'
+            $ref: '#/components/schemas/FundDepositRedemptionRecordResponse'
         pagination:
           $ref: '#/components/schemas/PaginationResponse'
 
@@ -715,7 +715,7 @@ components:
         - date: "2026-02-10"
           value: 50207.3
 
-    InvestmentSubscriptionRedemptionRecordResponse:
+    InvestmentDepositRedemptionRecordResponse:
       type: object
       required: [id, date, type, amount, shares, executedNav, status]
       properties:
@@ -728,8 +728,8 @@ components:
           description: 日期
         type:
           type: string
-          description: 类型（SUBSCRIPTION=申购，REDEMPTION=赎回）
-          enum: [SUBSCRIPTION, REDEMPTION]
+          description: 类型（DEPOSIT=申购，REDEMPTION=赎回）
+          enum: [DEPOSIT, REDEMPTION]
         amount:
           type: number
           description: 金额（单位USDC）
@@ -746,20 +746,20 @@ components:
       examples:
         - id: 10001
           date: "2026-02-10"
-          type: SUBSCRIPTION
+          type: DEPOSIT
           amount: 50000
           shares: 45231.8
           executedNav: 1.105
           status: SETTLED
 
-    InvestmentSubscriptionRedemptionListResponse:
+    InvestmentDepositRedemptionListResponse:
       type: object
       required: [items, pagination]
       properties:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/InvestmentSubscriptionRedemptionRecordResponse'
+            $ref: '#/components/schemas/InvestmentDepositRedemptionRecordResponse'
         pagination:
           $ref: '#/components/schemas/PaginationResponse'
 
@@ -1161,12 +1161,12 @@ paths:
         default:
           $ref: '#/components/responses/DefaultError'
 
-  /funds/{fundId}/subscription-redemption-records:
+  /funds/{fundId}/deposit-redemption-records:
     get:
       tags:
         - fund
       summary: 获取基金申赎记录列表
-      operationId: listFundSubscriptionRedemptionRecords
+      operationId: listFundDepositRedemptionRecords
       security: []
       parameters:
         - name: fundId
@@ -1189,7 +1189,7 @@ paths:
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/FundSubscriptionRedemptionRecordListResponse'
+                        $ref: '#/components/schemas/FundDepositRedemptionRecordListResponse'
         default:
           $ref: '#/components/responses/DefaultError'
 
@@ -1267,12 +1267,12 @@ paths:
         default:
           $ref: '#/components/responses/DefaultError'
 
-  /investment/{fundId}/subscription-redemption-records:
+  /investment/{fundId}/deposit-redemption-records:
     get:
       tags:
         - investment
       summary: 获取投资申赎记录列表
-      operationId: listInvestmentSubscriptionRedemptionRecords
+      operationId: listInvestmentDepositRedemptionRecords
       parameters:
         - name: fundId
           in: path
@@ -1294,7 +1294,7 @@ paths:
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/InvestmentSubscriptionRedemptionListResponse'
+                        $ref: '#/components/schemas/InvestmentDepositRedemptionListResponse'
         default:
           $ref: '#/components/responses/DefaultError'
 
