@@ -30,7 +30,7 @@ tags:
     description: 认证相关接口
   - name: user
     description: 用户相关接口
-  - name: fund
+  - name: market
     description: 基金查询接口
   - name: investment
     description: 投资接口
@@ -48,19 +48,19 @@ components:
     AddressResponse:
       type: string
       description: EVM 地址
-      examples: ["0xabc123..."]
+      examples: ["0xabc123abc123abc123abc123abc123abc123abc1"]
 
     UserProfileResponse:
       type: object
       required: [address, role, createdAt]
       properties:
         address:
-          $ref: '#/components/schemas/AddressResponse'
+          $ref: "#/components/schemas/AddressResponse"
         role:
           type: string
           description: 用户角色（INVESTOR=投资人，MANAGER=基金经理）
           enum: [INVESTOR, MANAGER]
-          examples: [INVESTOR]
+          examples: [MANAGER]
         createdAt:
           type: string
           format: date-time
@@ -70,10 +70,31 @@ components:
           description: 基金经理申请状态（NONE=未申请，PENDING=审核中，APPROVED=已通过，REJECTED=已拒绝）
           enum: [NONE, PENDING, APPROVED, REJECTED]
           examples: [NONE]
+      examples:
+        - address: "0xabc123abc123abc123abc123abc123abc123abc1"
+          role: MANAGER
+          createdAt: "2026-01-15T14:30:00Z"
+          managerApplicationStatus: APPROVED
 
     FundBaseResponse:
       type: object
-      required: [fundId, fundName, fundDescription, minimumSubscriptionAmount, managementFeeRate, performanceFeeRate, autoStopLossRate, manager]
+      required:
+        [
+          fundId,
+          fundName,
+          fundDescription,
+          manager,
+          vaultAddress,
+          createdAt,
+          riskProfile,
+          marketUniverse,
+          rebalanceRule,
+          minimumDeposit,
+          minimumRedeem,
+          managementFeeRate,
+          performanceFeeRate,
+          autoStopLossPct,
+        ]
       properties:
         fundId:
           type: integer
@@ -85,57 +106,114 @@ components:
         fundDescription:
           type: string
           description: 基金简介
-        minimumSubscriptionAmount:
+        manager:
+          $ref: "#/components/schemas/AddressResponse"
+        vaultAddress:
+          $ref: "#/components/schemas/AddressResponse"
+        createdAt:
+          type: string
+          format: date-time
+          description: 创建时间（UTC）
+        riskProfile:
+          type: string
+          description: 风险等级（如 LOW / MEDIUM / HIGH）
+        marketUniverse:
+          type: array
+          description: 策略覆盖的市场范围
+          items:
+            type: string
+        rebalanceRule:
+          type: string
+          description: 调仓规则说明
+        minimumDeposit:
           type: number
-          description: 最低申购金额（单位USDC）
+          description: 最低Deposit金额（单位USDC）
+        minimumRedeem:
+          type: number
+          description: 最低Redeem金额（单位USDC）
         managementFeeRate:
           type: number
           description: 管理费率（百分比小数，如 0.02 表示 2%）
         performanceFeeRate:
           type: number
           description: 业绩报酬比例（百分比小数，如 0.2 表示 20%）
-        autoStopLossRate:
+        autoStopLossPct:
           type: number
           description: 自动止损比例（百分比小数，如 0.1 表示 10%）
-        manager:
-          $ref: '#/components/schemas/AddressResponse'
 
-    FundSummaryResponse:
+    FundDetailResponse:
       allOf:
-        - $ref: '#/components/schemas/FundBaseResponse'
+        - $ref: "#/components/schemas/FundBaseResponse"
         - type: object
-          required: [cumulativeReturnPct, aum, investorCount, status]
+          required: [status, currentNav, cumulativeReturnPct, maxDrawdownPct, aum, investorCount]
           properties:
+            status:
+              type: string
+              description: 当前状态（RUNNING=运营中，STOPPED=已停运）
+              enum: [RUNNING, STOPPED]
+            currentNav:
+              type: number
+              description: 当前NAV（单位USDC）
             cumulativeReturnPct:
               type: number
               description: 累计收益率（原始小数，如 0.123 表示 12.3%）
+            maxDrawdownPct:
+              type: number
+              description: 最大回撤（原始小数，如 -0.094 表示 -9.4%）
             aum:
               type: number
               description: 管理规模（金额数值）
             investorCount:
               type: integer
               description: 投资人数
-            status:
-              type: string
-              description: 当前状态（RUNNING=运营中，STOPPED=已停运）
-              enum: [RUNNING, STOPPED]
       examples:
         - fundId: 1
           fundName: US Election Alpha
           fundDescription: 聚焦美国大选相关预测市场的主动管理策略基金
-          minimumSubscriptionAmount: 1000
+          manager: "0xabc123abc123abc123abc123abc123abc123abc1"
+          vaultAddress: "0x950e1f915919791cffe9fd2e5555dea7e7ce7c57"
+          createdAt: "2026-01-15T14:30:00Z"
+          status: RUNNING
+          riskProfile: MEDIUM_HIGH
+          marketUniverse: [Politics, Macro, Crypto Events]
+          rebalanceRule: Weekly + event-driven rebalance
+          minimumDeposit: 1000
+          minimumRedeem: 300
           managementFeeRate: 0.02
           performanceFeeRate: 0.2
-          autoStopLossRate: 0.1
-          manager: "0xabc123..."
+          autoStopLossPct: 0.1
+          currentNav: 1.15
           cumulativeReturnPct: 0.123
+          maxDrawdownPct: -0.094
           aum: 1000000
           investorCount: 368
-          status: RUNNING
 
-    InvestorPortfolioFundItemResponse:
+    InvestmentFundItemResponse:
       type: object
-      required: [fundId, fundName, fundDescription, minimumSubscriptionAmount, managementFeeRate, performanceFeeRate, autoStopLossRate, manager, status, holdingShares, currentNav, investedAmount, currentValue, returnPct]
+      required:
+        [
+          fundId,
+          fundName,
+          fundDescription,
+          manager,
+          vaultAddress,
+          createdAt,
+          status,
+          riskProfile,
+          marketUniverse,
+          rebalanceRule,
+          minimumDeposit,
+          minimumRedeem,
+          managementFeeRate,
+          performanceFeeRate,
+          autoStopLossPct,
+          currentNav,
+          maxDrawdownPct,
+          holdingShares,
+          investedAmount,
+          currentValue,
+          returnPct,
+        ]
       properties:
         fundId:
           type: integer
@@ -147,30 +225,53 @@ components:
         fundDescription:
           type: string
           description: 基金简介
-        minimumSubscriptionAmount:
+        manager:
+          $ref: "#/components/schemas/AddressResponse"
+        vaultAddress:
+          $ref: "#/components/schemas/AddressResponse"
+        createdAt:
+          type: string
+          format: date-time
+          description: 创建时间（UTC）
+        status:
+          type: string
+          description: 当前状态（RUNNING=运营中，STOPPED=已停止）
+          enum: [RUNNING, STOPPED]
+        riskProfile:
+          type: string
+          description: 风险等级（如 LOW / MEDIUM / HIGH）
+        marketUniverse:
+          type: array
+          description: 策略覆盖的市场范围
+          items:
+            type: string
+        rebalanceRule:
+          type: string
+          description: 调仓规则说明
+        minimumDeposit:
           type: number
-          description: 最低申购金额（单位USDC）
+          description: 最低Deposit金额（单位USDC）
+        minimumRedeem:
+          type: number
+          description: 最低Redeem金额（单位USDC）
         managementFeeRate:
           type: number
           description: 管理费率（百分比小数）
         performanceFeeRate:
           type: number
           description: 业绩报酬比例（百分比小数）
-        autoStopLossRate:
+        autoStopLossPct:
           type: number
           description: 自动止损比例（百分比小数）
-        manager:
-          $ref: '#/components/schemas/AddressResponse'
-        status:
-          type: string
-          description: 当前状态（RUNNING=运营中，STOPPED=已停止）
-          enum: [RUNNING, STOPPED]
-        holdingShares:
-          type: number
-          description: 持有份额（可为小数）
         currentNav:
           type: number
           description: 当前NAV（单位USDC）
+        maxDrawdownPct:
+          type: number
+          description: 最大回撤（原始小数）
+        holdingShares:
+          type: number
+          description: 持有份额（可为小数）
         investedAmount:
           type: number
           description: 投资金额（单位USDC）
@@ -181,20 +282,91 @@ components:
           type: number
           description: 收益百分比（原始小数，如 0.123 表示 12.3%）
 
-    InvestmentFundListResponse:
+    InvestmentFundsListResponse:
       type: object
       required: [items, pagination]
+      examples:
+        - pagination:
+            page: 1
+            pageSize: 20
+            totalItems: 3
+            totalPages: 1
+          items:
+            - fundId: 1
+              fundName: "US Election Alpha"
+              fundDescription: "聚焦美国大选相关预测市场的主动管理策略基金"
+              manager: "0xabc123abc123abc123abc123abc123abc123abc1"
+              vaultAddress: "0xabc123abc123abc123abc123abc123abc123abc1"
+              createdAt: "2026-01-15T14:30:00Z"
+              status: RUNNING
+              riskProfile: MEDIUM_HIGH
+              marketUniverse: [Politics, Macro, Crypto Events]
+              rebalanceRule: Weekly + event-driven rebalance
+              minimumDeposit: 1000
+              minimumRedeem: 300
+              managementFeeRate: 0.02
+              performanceFeeRate: 0.2
+              autoStopLossPct: 0.1
+              currentNav: 1.284
+              maxDrawdownPct: -0.094
+              holdingShares: 12001.43
+              investedAmount: 12000
+              currentValue: 15408
+              returnPct: 0.284
+            - fundId: 2
+              fundName: "Macro Volatility Fund"
+              fundDescription: "宏观波动率策略基金，关注事件驱动机会"
+              manager: "0xdef456def456def456def456def456def456def4"
+              vaultAddress: "0xdef456def456def456def456def456def456def4"
+              createdAt: "2026-01-20T09:10:00Z"
+              status: RUNNING
+              riskProfile: MEDIUM
+              marketUniverse: [Macro, Crypto]
+              rebalanceRule: Daily volatility targeting
+              minimumDeposit: 500
+              minimumRedeem: 200
+              managementFeeRate: 0.02
+              performanceFeeRate: 0.15
+              autoStopLossPct: 0.08
+              currentNav: 0.973
+              maxDrawdownPct: -0.121
+              holdingShares: 7999.22
+              investedAmount: 8000
+              currentValue: 7784
+              returnPct: -0.027
+            - fundId: 3
+              fundName: "Sports Momentum Fund"
+              fundDescription: "体育事件动量策略基金，择时参与高流动性市场"
+              manager: "0x987fed987fed987fed987fed987fed987fed987f"
+              vaultAddress: "0x987fed987fed987fed987fed987fed987fed987f"
+              createdAt: "2026-01-28T06:25:00Z"
+              status: STOPPED
+              riskProfile: MEDIUM
+              marketUniverse: [Sports]
+              rebalanceRule: Event-driven momentum rotation
+              minimumDeposit: 300
+              minimumRedeem: 100
+              managementFeeRate: 0.015
+              performanceFeeRate: 0.15
+              autoStopLossPct: 0.07
+              currentNav: 1.106
+              maxDrawdownPct: -0.067
+              holdingShares: 3198.04
+              investedAmount: 3200
+              currentValue: 3539
+              returnPct: 0.106
       properties:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/InvestorPortfolioFundItemResponse'
+            $ref: "#/components/schemas/InvestmentFundItemResponse"
         pagination:
-          $ref: '#/components/schemas/PaginationResponse'
+          $ref: "#/components/schemas/PaginationResponse"
 
-    InvestmentOverviewResponse:
+    InvestmentSummaryResponse:
       type: object
-      required: [totalInvested, currentTotalValue, cumulativePnl, cumulativePnlPct, investedFundCount]
+      required:
+        [totalInvested, currentTotalValue, cumulativePnl, cumulativePnlPct, investedFundCount]
       examples:
         - totalInvested: 150000
           currentTotalValue: 162500
@@ -245,30 +417,42 @@ components:
             - domain（与 /auth/nonce 请求一致）
             - address（签名钱包地址）
             - chainId（与 /auth/nonce 请求一致）
-            - nonce（来自 /auth/nonce 返回值）
+            - nonce（来自 /auth/nonce 返回值，必须为字母数字，最少 8 位，不包含 "-" 等特殊字符）
             - issuedAt（ISO 8601 UTC 时间）
           examples:
             - |-
               app.polyagent.fund wants you to sign in with your Ethereum account:
-              0xabc123...
-              
+              0xabc123abc123abc123abc123abc123abc123abc1
+
               Sign in to Polyagent
-              
+
               URI: https://app.polyagent.fund
               Version: 1
               Chain ID: 137
-              Nonce: n-6f3af91f0ab8
+              Nonce: n6f3af91f0ab8
               Issued At: 2026-02-10T12:00:00Z
         signature:
           type: string
           description: 对 message 的钱包签名（十六进制字符串，0x 前缀）
-          pattern: '^0x[0-9a-fA-F]{130}$'
+          pattern: "^0x[0-9a-fA-F]{130}$"
           examples:
             - "0x4f3c9b6f4e2d7a1b5c8d9e0f11223344556677889900aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899aabbccddee1b"
 
     CreateFundRequest:
       type: object
-      required: [fundName, fundDescription, minimumSubscriptionAmount, managementFeeRate, performanceFeeRate, autoStopLossRate]
+      required:
+        [
+          fundName,
+          fundDescription,
+          riskProfile,
+          marketUniverse,
+          rebalanceRule,
+          minimumDeposit,
+          minimumRedeem,
+          managementFeeRate,
+          performanceFeeRate,
+          autoStopLossPct,
+        ]
       properties:
         fundName:
           type: string
@@ -276,25 +460,45 @@ components:
         fundDescription:
           type: string
           description: 基金简介
-        minimumSubscriptionAmount:
+        riskProfile:
+          type: string
+          description: 风险偏好
+          enum: [LOW, MEDIUM, MEDIUM_HIGH, HIGH]
+        marketUniverse:
+          type: array
+          description: 可投资市场范围
+          minItems: 1
+          items:
+            type: string
+        rebalanceRule:
+          type: string
+          description: 调仓规则说明
+        minimumDeposit:
           type: number
-          description: 最低申购金额（单位USDC）
+          description: 最低Deposit金额（单位USDC）
+        minimumRedeem:
+          type: number
+          description: 最低Redeem金额（单位USDC）
         managementFeeRate:
           type: number
           description: 管理费率（百分比小数）
         performanceFeeRate:
           type: number
           description: 业绩报酬比例（百分比小数）
-        autoStopLossRate:
+        autoStopLossPct:
           type: number
           description: 自动止损比例（百分比小数）
       examples:
         - fundName: "US Election Alpha"
           fundDescription: "聚焦美国大选相关预测市场的主动管理策略基金"
-          minimumSubscriptionAmount: 1000
+          riskProfile: MEDIUM_HIGH
+          marketUniverse: ["Politics", "Macro", "Crypto Events"]
+          rebalanceRule: "Weekly + event-driven rebalance"
+          minimumDeposit: 1000
+          minimumRedeem: 300
           managementFeeRate: 0.02
           performanceFeeRate: 0.2
-          autoStopLossRate: 0.1
+          autoStopLossPct: 0.1
 
     PolymarketOrderRequest:
       type: object
@@ -325,7 +529,7 @@ components:
           type: boolean
           description: 是否延迟执行（true=仅入队，false=立即尝试执行）
         order:
-          $ref: '#/components/schemas/PolymarketOrderRequest'
+          $ref: "#/components/schemas/PolymarketOrderRequest"
         orderType:
           type: string
           description: 订单执行策略（GTC=持续有效，GTD=到期前有效，FOK=全部成交否则取消，FAK=立即成交剩余取消）
@@ -344,13 +548,17 @@ components:
 
     IntentResponse:
       allOf:
-        - $ref: '#/components/schemas/IntentRequest'
+        - $ref: "#/components/schemas/IntentRequest"
         - type: object
-          required: [intentId, status]
+          required: [intentId, createdAt, status]
           properties:
             intentId:
               type: string
               description: 交易意图ID
+            createdAt:
+              type: string
+              format: date-time
+              description: 交易意图创建时间（UTC）
             status:
               type: string
               description: 执行状态（PENDING=待执行，EXECUTING=执行中，COMPLETED=已完成，FAILED=执行失败）
@@ -360,6 +568,7 @@ components:
               description: 执行失败时的错误信息
       examples:
         - intentId: "intent_10001"
+          createdAt: "2026-02-16T09:05:00Z"
           deferExec: false
           order:
             tokenId: "52131203329998207510016525064140580388668921672474814275063839342530145683684"
@@ -407,7 +616,7 @@ components:
 
     PaginationResponse:
       type: object
-      required: [page, pageSize, total, totalPages]
+      required: [page, pageSize, totalItems, totalPages]
       properties:
         page:
           type: integer
@@ -417,7 +626,7 @@ components:
           type: integer
           description: 每页条数
           minimum: 1
-        total:
+        totalItems:
           type: integer
           description: 总记录数
           minimum: 0
@@ -428,7 +637,7 @@ components:
       examples:
         - page: 1
           pageSize: 20
-          total: 368
+          totalItems: 368
           totalPages: 19
 
     AuthNonceDataResponse:
@@ -437,73 +646,153 @@ components:
       properties:
         nonce:
           type: string
+          description: SIWE nonce（字母数字，最少 8 位，不包含 "-" 等特殊字符）
+          pattern: "^[A-Za-z0-9]{8,}$"
+          minLength: 8
+      examples:
+        - nonce: n6f3af91f0ab8
 
     AuthLoginDataResponse:
       type: object
-      required: [token]
+      required: [token, user]
       properties:
         token:
           type: string
-
-    UserProfileDataResponse:
-      type: object
-      required: [profile]
-      properties:
-        profile:
-          $ref: '#/components/schemas/UserProfileResponse'
+          description: 登录会话令牌（JWT）
+        user:
+          $ref: "#/components/schemas/UserProfileResponse"
+      examples:
+        - token: eyJhbGciOiJIUzI1NiJ9.mock.payload
+          user:
+            address: "0xabc123abc123abc123abc123abc123abc123abc1"
+            role: MANAGER
+            createdAt: "2026-01-15T14:30:00Z"
+            managerApplicationStatus: APPROVED
 
     EmptyDataResponse:
       type: object
       additionalProperties: false
 
-    FundSummaryListDataResponse:
+    FundsListResponse:
       type: object
       required: [pagination, items]
       examples:
         - pagination:
             page: 1
             pageSize: 20
-            total: 368
+            totalItems: 368
             totalPages: 19
           items:
             - fundId: 1
               fundName: US Election Alpha
               fundDescription: 聚焦美国大选相关预测市场的主动管理策略基金
-              minimumSubscriptionAmount: 1000
+              manager: "0xabc123abc123abc123abc123abc123abc123abc1"
+              vaultAddress: "0xabc123abc123abc123abc123abc123abc123abc1"
+              createdAt: "2026-01-15T14:30:00Z"
+              status: RUNNING
+              riskProfile: MEDIUM_HIGH
+              marketUniverse: [Politics, Macro, Crypto Events]
+              rebalanceRule: Weekly + event-driven rebalance
+              minimumDeposit: 1000
+              minimumRedeem: 300
               managementFeeRate: 0.02
               performanceFeeRate: 0.2
-              autoStopLossRate: 0.1
-              manager: "0xabc123..."
+              autoStopLossPct: 0.1
+              currentNav: 1.15
               cumulativeReturnPct: 0.123
+              maxDrawdownPct: -0.094
               aum: 1000000
               investorCount: 368
+            - fundId: 2
+              fundName: Crypto Event Contrarian
+              fundDescription: 逆向布局加密市场事件波动的策略基金
+              manager: "0xdef456def456def456def456def456def456def4"
+              vaultAddress: "0xdef456def456def456def456def456def456def4"
+              createdAt: "2026-01-20T09:10:00Z"
               status: RUNNING
+              riskProfile: MEDIUM
+              marketUniverse: [Crypto, Global Macro]
+              rebalanceRule: Daily factor rebalance
+              minimumDeposit: 500
+              minimumRedeem: 200
+              managementFeeRate: 0.015
+              performanceFeeRate: 0.15
+              autoStopLossPct: 0.08
+              currentNav: 0.94
+              cumulativeReturnPct: -0.067
+              maxDrawdownPct: -0.121
+              aum: 620000
+              investorCount: 142
+            - fundId: 3
+              fundName: Macro Defense Fund
+              fundDescription: 以宏观防守为主的低波动基金策略
+              manager: "0x987fed987fed987fed987fed987fed987fed987f"
+              vaultAddress: "0x987fed987fed987fed987fed987fed987fed987f"
+              createdAt: "2026-01-28T06:25:00Z"
+              status: STOPPED
+              riskProfile: LOW_MEDIUM
+              marketUniverse: [Macro, Rates]
+              rebalanceRule: Weekly defensive rebalance
+              minimumDeposit: 800
+              minimumRedeem: 250
+              managementFeeRate: 0.02
+              performanceFeeRate: 0.1
+              autoStopLossPct: 0.06
+              currentNav: 0.88
+              cumulativeReturnPct: -0.153
+              maxDrawdownPct: -0.189
+              aum: 410000
+              investorCount: 97
       properties:
         pagination:
-          $ref: '#/components/schemas/PaginationResponse'
+          $ref: "#/components/schemas/PaginationResponse"
         items:
           type: array
           items:
-            $ref: '#/components/schemas/FundSummaryResponse'
+            $ref: "#/components/schemas/FundDetailResponse"
+
+    MarketSummaryResponse:
+      type: object
+      required: [fundCount, totalInvestorCount, totalInvested, totalValue]
+      examples:
+        - fundCount: 368
+          totalInvestorCount: 12876
+          totalInvested: 211540000
+          totalValue: 158430000
+      properties:
+        fundCount:
+          type: integer
+          description: 全平台基金数量
+          minimum: 0
+        totalInvestorCount:
+          type: integer
+          description: 全平台投资人数（去重地址数）
+          minimum: 0
+        totalInvested:
+          type: number
+          description: 全平台累计总投资额（单位USDC）
+        totalValue:
+          type: number
+          description: 全平台当前总价值（单位USDC）
 
     FundPerformancePointResponse:
       type: object
-      required: [date, nav]
+      required: [date, value]
       properties:
         date:
           type: string
           format: date
           description: 日期
-        nav:
+        value:
           type: number
-          description: 当日净值
+          description: 当日数值（实际值为 NAV）
       examples:
         - date: "2025-01-01"
-          nav: 1.11
+          value: 1.11
 
     FundPositionResponse:
       type: object
-      required: [id, marketName, allocationPct, value, outcome]
+      required: [id, marketName, allocationPct, shares, currentValue, outcome]
       properties:
         id:
           type: integer
@@ -515,9 +804,12 @@ components:
         allocationPct:
           type: number
           description: 持仓占比（原始小数，如 0.255 表示 25.5%）
-        value:
+        shares:
           type: number
-          description: 持仓价值（金额数值）
+          description: 持仓份额（可为小数）
+        currentValue:
+          type: number
+          description: 当前持仓价值（金额数值）
         outcome:
           type: string
           description: 方向（YES/NO）
@@ -526,12 +818,13 @@ components:
         - id: 9001
           marketName: "US Election Winner 2028"
           allocationPct: 0.255
-          value: 255000
+          shares: 12842.16
+          currentValue: 255000
           outcome: YES
 
     FundInvestorRankingResponse:
       type: object
-      required: [id, rank, investor, holdingAmount, ratioPct]
+      required: [id, rank, investor, holdingShares, holdingSharePct]
       properties:
         id:
           type: integer
@@ -541,21 +834,21 @@ components:
           type: integer
           description: 名次
         investor:
-          $ref: '#/components/schemas/AddressResponse'
-        holdingAmount:
+          $ref: "#/components/schemas/AddressResponse"
+        holdingShares:
           type: number
-          description: 持有份额（金额）
-        ratioPct:
+          description: 持有份额（可为小数）
+        holdingSharePct:
           type: number
-          description: 占比（原始小数，如 0.18 表示 18%）
+          description: 持仓占基金总份额比例（原始小数，如 0.18 表示 18%）
       examples:
         - id: 7001
           rank: 1
-          investor: "0xaaa111..."
-          holdingAmount: 180000
-          ratioPct: 0.18
+          investor: "0xaaa111aaa111aaa111aaa111aaa111aaa111aaa1"
+          holdingShares: 18542.36
+          holdingSharePct: 0.18
 
-    FundDepositRedemptionRecordResponse:
+    FundTransactionResponse:
       type: object
       required: [id, date, type, investor, amount, shares, status]
       properties:
@@ -569,25 +862,25 @@ components:
           description: 日期
         type:
           type: string
-          description: 记录类型（DEPOSIT=申购，REDEMPTION=赎回）
-          enum: [DEPOSIT, REDEMPTION]
+          description: 记录类型（DEPOSIT=申购，REDEEM=赎回）
+          enum: [DEPOSIT, REDEEM]
         investor:
-          $ref: '#/components/schemas/AddressResponse'
+          $ref: "#/components/schemas/AddressResponse"
         amount:
-          type: number
-          description: 金额
+          type: [number, "null"]
+          description: 金额（REDEEM 且未结算/已取消时可为空）
         shares:
-          type: number
-          description: 份额
+          type: [number, "null"]
+          description: 份额（DEPOSIT 且未结算/已取消时可为空）
         status:
           type: string
-          description: 结算状态（SETTLING=结算中，SETTLED=已结算，CANCELLED=已取消，FAILED=结算失败）
-          enum: [SETTLING, SETTLED, CANCELLED, FAILED]
+          description: 结算状态（PENDING=处理中，SETTLED=已结算，CANCELED=已取消）
+          enum: [PENDING, SETTLED, CANCELED]
       examples:
         - id: 5001
           date: "2026-02-10"
           type: DEPOSIT
-          investor: "0xbbb222..."
+          investor: "0xbbb222bbb222bbb222bbb222bbb222bbb222bbb2"
           amount: 50000
           shares: 45231.8
           status: SETTLED
@@ -595,13 +888,46 @@ components:
     FundPositionListResponse:
       type: object
       required: [items, pagination]
+      examples:
+        - items:
+            - id: 9001
+              marketName: US Election Winner 2028
+              allocationPct: 0.255
+              shares: 12842.16
+              currentValue: 255000
+              outcome: "YES"
+            - id: 9002
+              marketName: Fed Cuts in March
+              allocationPct: 0.19
+              shares: 10401.33
+              currentValue: 192750
+              outcome: "NO"
+          pagination:
+            page: 1
+            pageSize: 10
+            totalItems: 2
+            totalPages: 1
       properties:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/FundPositionResponse'
+            $ref: "#/components/schemas/FundPositionResponse"
         pagination:
-          $ref: '#/components/schemas/PaginationResponse'
+          $ref: "#/components/schemas/PaginationResponse"
+
+    FundCashReserveResponse:
+      type: object
+      required: [allocationPct, currentValue]
+      properties:
+        allocationPct:
+          type: number
+          description: 现金储备占比（原始小数，如 0.29 表示 29%）
+        currentValue:
+          type: number
+          description: 当前现金储备价值（单位USDC）
+      examples:
+        - allocationPct: 0.29
+          currentValue: 730800
 
     FundInvestorRankingListResponse:
       type: object
@@ -610,95 +936,168 @@ components:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/FundInvestorRankingResponse'
+            $ref: "#/components/schemas/FundInvestorRankingResponse"
         pagination:
-          $ref: '#/components/schemas/PaginationResponse'
+          $ref: "#/components/schemas/PaginationResponse"
 
-    FundDepositRedemptionRecordListResponse:
+    FundTransactionListResponse:
       type: object
       required: [items, pagination]
+      examples:
+        - items:
+            - id: 5001
+              date: "2026-02-10"
+              type: DEPOSIT
+              investor: "0xbbb222bbb222bbb222bbb222bbb222bbb222bbb2"
+              amount: 50000
+              shares: 45231.8
+              status: SETTLED
+            - id: 5002
+              date: "2026-02-11"
+              type: REDEEM
+              investor: "0xccc333ccc333ccc333ccc333ccc333ccc333ccc3"
+              amount: 8000
+              shares: 7120.5
+              status: SETTLED
+            - id: 5003
+              date: "2026-02-12"
+              type: DEPOSIT
+              investor: "0xddd444ddd444ddd444ddd444ddd444ddd444ddd4"
+              amount: 12000
+              shares: null
+              status: PENDING
+            - id: 5004
+              date: "2026-02-13"
+              type: REDEEM
+              investor: "0xeee555eee555eee555eee555eee555eee555eee5"
+              amount: null
+              shares: 3098.4
+              status: PENDING
+            - id: 5005
+              date: "2026-02-14"
+              type: DEPOSIT
+              investor: "0xfff666fff666fff666fff666fff666fff666fff6"
+              amount: 6000
+              shares: null
+              status: CANCELED
+            - id: 5006
+              date: "2026-02-15"
+              type: REDEEM
+              investor: "0x1117771117771117771117771117771117771117"
+              amount: null
+              shares: 2500
+              status: CANCELED
+          pagination:
+            page: 1
+            pageSize: 10
+            totalItems: 6
+            totalPages: 1
       properties:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/FundDepositRedemptionRecordResponse'
+            $ref: "#/components/schemas/FundTransactionResponse"
         pagination:
-          $ref: '#/components/schemas/PaginationResponse'
+          $ref: "#/components/schemas/PaginationResponse"
 
-    FundOverviewDataResponse:
-      type: object
-      required: [fund, performance]
+    FundPerformanceResponse:
+      type: array
+      description: 业绩表现（折线图数据点）
+      items:
+        $ref: "#/components/schemas/FundPerformancePointResponse"
       examples:
-        - fund:
-            fundId: 1
-            fundName: US Election Alpha
-            fundDescription: 聚焦美国大选相关预测市场的主动管理策略基金
-            minimumSubscriptionAmount: 1000
-            managementFeeRate: 0.02
-            performanceFeeRate: 0.2
-            autoStopLossRate: 0.1
-            manager: "0xabc123..."
-            cumulativeReturnPct: 0.123
-            aum: 1000000
-            investorCount: 368
-            status: RUNNING
-          performance:
-            - date: "2025-01-01"
-              nav: 1.11
-            - date: "2025-02-01"
-              nav: 1.15
-      properties:
-        fund:
-          $ref: '#/components/schemas/FundSummaryResponse'
-        performance:
-          type: array
-          description: 业绩表现（折线图数据点）
-          items:
-            $ref: '#/components/schemas/FundPerformancePointResponse'
+        - - date: "2026-01-01"
+            value: 1.102
+          - date: "2026-01-02"
+            value: 1.106
+          - date: "2026-01-03"
+            value: 1.111
+          - date: "2026-01-04"
+            value: 1.108
+          - date: "2026-01-05"
+            value: 1.115
+          - date: "2026-01-06"
+            value: 1.119
+          - date: "2026-01-07"
+            value: 1.123
+          - date: "2026-01-08"
+            value: 1.121
+          - date: "2026-01-09"
+            value: 1.127
+          - date: "2026-01-10"
+            value: 1.132
+          - date: "2026-01-11"
+            value: 1.136
+          - date: "2026-01-12"
+            value: 1.141
+          - date: "2026-01-13"
+            value: 1.139
+          - date: "2026-01-14"
+            value: 1.145
+          - date: "2026-01-15"
+            value: 1.15
 
-    InvestmentDetailDataResponse:
-      type: object
-      required: [fundId, fundName, manager, holdingShares, investedAmount, currentValue, returnPct, valueTrend]
-      examples:
-        - fundId: 1
-          fundName: US Election Alpha
-          manager: "0xabc123..."
-          holdingShares: 45231.8
-          investedAmount: 50000
-          currentValue: 50207.3
-          returnPct: 0.0041
-          valueTrend:
-            - date: "2026-02-08"
-              value: 49860.0
-            - date: "2026-02-10"
-              value: 50207.3
-      properties:
-        fundId:
-          type: integer
-          format: int64
-          description: 基金ID
-        fundName:
-          type: string
-          description: 基金名称
-        manager:
-          $ref: '#/components/schemas/AddressResponse'
-        holdingShares:
-          type: number
-          description: 持有份额（金额数值，可为小数）
-        investedAmount:
-          type: number
-          description: 投资金额（单位USDC）
-        currentValue:
-          type: number
-          description: 当前价值（单位USDC）
-        returnPct:
-          type: number
-          description: 收益百分比（百分比小数）
-        valueTrend:
-          type: array
-          description: 投资价值走势（折线图数据）
-          items:
-            $ref: '#/components/schemas/InvestmentValueTrendPointResponse'
+    InvestmentFundDetailResponse:
+      allOf:
+        - $ref: "#/components/schemas/FundBaseResponse"
+        - type: object
+          required:
+            [
+              status,
+              currentNav,
+              holdingShares,
+              totalDeposits,
+              totalRedeems,
+              netInvested,
+              currentValue,
+              totalPnl,
+              totalPnlPct,
+              unrealizedPnl,
+              unrealizedPnlPct,
+              realizedPnl,
+              realizedPnlPct,
+            ]
+          properties:
+            status:
+              type: string
+              description: 基金状态（RUNNING=运营中，STOPPED=已停止）
+              enum: [RUNNING, STOPPED]
+            currentNav:
+              type: number
+              description: 当前NAV（单位USDC）
+            holdingShares:
+              type: number
+              description: 持有份额（金额数值，可为小数）
+            totalDeposits:
+              type: number
+              description: 累计总申购金额（单位USDC）
+            totalRedeems:
+              type: number
+              description: 累计总赎回金额（单位USDC）
+            netInvested:
+              type: number
+              description: 净投入本金（累计申购 - 累计赎回本金，单位USDC）
+            currentValue:
+              type: number
+              description: 当前价值（单位USDC）
+            totalPnl:
+              type: number
+              description: 累计总盈亏（已实现 + 未实现，单位USDC）
+            totalPnlPct:
+              type: number
+              description: 累计总收益率（原始小数，如 0.12 表示 12%）
+            unrealizedPnl:
+              type: number
+              description: 未实现盈亏（单位USDC）
+            unrealizedPnlPct:
+              type: number
+              description: 未实现收益率（原始小数）
+            realizedPnl:
+              type: number
+              description: 已实现盈亏（单位USDC）
+            realizedPnlPct:
+              type: number
+              description: 已实现收益率（原始小数）
 
     InvestmentValueTrendPointResponse:
       type: object
@@ -715,123 +1114,282 @@ components:
         - date: "2026-02-10"
           value: 50207.3
 
-    InvestmentDepositRedemptionRecordResponse:
+    InvestmentFundValueTrendResponse:
+      type: array
+      description: 投资价值走势（折线图数据）
+      items:
+        $ref: "#/components/schemas/InvestmentValueTrendPointResponse"
+      examples:
+        - - date: "2026-02-01"
+            value: 49860
+          - date: "2026-02-02"
+            value: 50020
+          - date: "2026-02-03"
+            value: 49740
+          - date: "2026-02-04"
+            value: 50210
+          - date: "2026-02-05"
+            value: 50790
+          - date: "2026-02-06"
+            value: 51030
+          - date: "2026-02-07"
+            value: 51460
+          - date: "2026-02-08"
+            value: 51820
+          - date: "2026-02-09"
+            value: 52100
+          - date: "2026-02-10"
+            value: 51940
+          - date: "2026-02-11"
+            value: 52680
+          - date: "2026-02-12"
+            value: 53200
+
+    InvestmentFundTransactionResponse:
       type: object
-      required: [id, date, type, amount, shares, executedNav, status]
+      required: [id, timestamp, type, amount, shares, executedNav, status]
       properties:
         id:
           type: integer
           format: int64
-        date:
+        timestamp:
           type: string
-          format: date
-          description: 日期
+          format: date-time
+          description: 交易时间（UTC）
         type:
           type: string
-          description: 类型（DEPOSIT=申购，REDEMPTION=赎回）
-          enum: [DEPOSIT, REDEMPTION]
+          description: 类型（DEPOSIT=申购，REDEEM=赎回）
+          enum: [DEPOSIT, REDEEM]
         amount:
-          type: number
-          description: 金额（单位USDC）
+          type: [number, "null"]
+          description: 交易金额（单位USDC；如状态为处理中/取消，可能为空）
         shares:
-          type: number
-          description: 份额（可为小数）
+          type: [number, "null"]
+          description: 交易份额（可为小数；如状态为处理中/取消，可能为空）
         executedNav:
-          type: number
-          description: 执行NAV（可为小数）
+          type: [number, "null"]
+          description: 执行NAV（可为小数；如状态为处理中/取消，可能为空）
         status:
           type: string
-          description: 状态（SETTLING=结算中，SETTLED=已结算，CANCELLED=已取消，FAILED=结算失败）
-          enum: [SETTLING, SETTLED, CANCELLED, FAILED]
+          description: 状态（PENDING=处理中，SETTLED=已结算，CANCELED=已取消）
+          enum: [PENDING, SETTLED, CANCELED]
       examples:
         - id: 10001
-          date: "2026-02-10"
+          timestamp: "2026-02-12T10:12:00Z"
           type: DEPOSIT
-          amount: 50000
-          shares: 45231.8
-          executedNav: 1.105
+          amount: 12000
+          shares: 10507.88
+          executedNav: 1.142
           status: SETTLED
 
-    InvestmentDepositRedemptionListResponse:
+    InvestmentFundTransactionListResponse:
       type: object
       required: [items, pagination]
+      examples:
+        - items:
+            - id: 10001
+              timestamp: "2026-02-12T10:12:00Z"
+              type: DEPOSIT
+              amount: 12000
+              shares: 10507.88
+              executedNav: 1.142
+              status: SETTLED
+            - id: 10002
+              timestamp: "2026-02-10T06:40:00Z"
+              type: REDEEM
+              amount: 6000
+              shares: 5236.43
+              executedNav: 1.146
+              status: SETTLED
+            - id: 10003
+              timestamp: "2026-02-09T19:21:00Z"
+              type: DEPOSIT
+              amount: 8000
+              shares: null
+              executedNav: null
+              status: PENDING
+            - id: 10004
+              timestamp: "2026-02-08T14:05:00Z"
+              type: REDEEM
+              amount: null
+              shares: 2100
+              executedNav: null
+              status: PENDING
+            - id: 10005
+              timestamp: "2026-02-07T09:10:00Z"
+              type: DEPOSIT
+              amount: 5000
+              shares: null
+              executedNav: null
+              status: CANCELED
+            - id: 10006
+              timestamp: "2026-02-06T16:30:00Z"
+              type: REDEEM
+              amount: null
+              shares: 1800
+              executedNav: null
+              status: CANCELED
+          pagination:
+            page: 1
+            pageSize: 10
+            totalItems: 6
+            totalPages: 1
       properties:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/InvestmentDepositRedemptionRecordResponse'
+            $ref: "#/components/schemas/InvestmentFundTransactionResponse"
         pagination:
-          $ref: '#/components/schemas/PaginationResponse'
+          $ref: "#/components/schemas/PaginationResponse"
 
-    ManagerFundOverviewResponse:
+    ManagerFundDetailResponse:
       allOf:
-        - $ref: '#/components/schemas/FundBaseResponse'
+        - $ref: "#/components/schemas/FundBaseResponse"
         - type: object
-          required: [currentNav, cumulativeReturnPct, aum, investorCount, status]
+          required: [status, currentNav, cumulativeReturnPct, maxDrawdownPct, aum, investorCount]
           properties:
+            status:
+              type: string
+              description: 状态（RUNNING=运营中，STOPPED=已停止）
+              enum: [RUNNING, STOPPED]
             currentNav:
               type: number
               description: 当前NAV
             cumulativeReturnPct:
               type: number
               description: 累计收益率（百分比小数）
+            maxDrawdownPct:
+              type: number
+              description: 最大回撤（原始小数）
             aum:
               type: number
               description: 管理规模（单位USDC）
             investorCount:
               type: integer
               description: 投资人数
-            status:
-              type: string
-              description: 状态（PENDING=审核中，RUNNING=运营中，STOPPED=已停止）
-              enum: [PENDING, RUNNING, STOPPED]
       examples:
         - fundId: 1
           fundName: "US Election Alpha"
           fundDescription: "聚焦美国大选相关预测市场的主动管理策略基金"
-          minimumSubscriptionAmount: 1000
+          manager: "0xabc123abc123abc123abc123abc123abc123abc1"
+          vaultAddress: "0x950e1f915919791cffe9fd2e5555dea7e7ce7c57"
+          createdAt: "2026-01-15T14:30:00Z"
+          status: RUNNING
+          riskProfile: MEDIUM_HIGH
+          marketUniverse: [Politics, Macro, Crypto Events]
+          rebalanceRule: Weekly + event-driven rebalance
+          minimumDeposit: 1000
+          minimumRedeem: 300
           managementFeeRate: 0.02
           performanceFeeRate: 0.2
-          autoStopLossRate: 0.1
-          manager: "0xabc123..."
+          autoStopLossPct: 0.1
           currentNav: 1.11
           cumulativeReturnPct: 0.123
+          maxDrawdownPct: -0.094
           aum: 1000000
           investorCount: 368
-          status: RUNNING
 
-    ManagerFundListResponse:
+    ManagerFundsListResponse:
       type: object
       required: [items, pagination]
+      examples:
+        - pagination:
+            page: 1
+            pageSize: 20
+            totalItems: 3
+            totalPages: 1
+          items:
+            - fundId: 1
+              fundName: "US Election Alpha"
+              fundDescription: "聚焦美国大选相关预测市场的主动管理策略基金"
+              manager: "0xabc123abc123abc123abc123abc123abc123abc1"
+              vaultAddress: "0xabc123abc123abc123abc123abc123abc123abc1"
+              createdAt: "2026-01-15T14:30:00Z"
+              status: RUNNING
+              riskProfile: MEDIUM_HIGH
+              marketUniverse: [Politics, Macro, Crypto Events]
+              rebalanceRule: Weekly + event-driven rebalance
+              minimumDeposit: 1000
+              minimumRedeem: 300
+              managementFeeRate: 0.02
+              performanceFeeRate: 0.2
+              autoStopLossPct: 0.1
+              currentNav: 1.11
+              cumulativeReturnPct: 0.123
+              maxDrawdownPct: -0.094
+              aum: 1000000
+              investorCount: 368
+            - fundId: 2
+              fundName: "Macro Defense Fund"
+              fundDescription: "以宏观防守策略为核心，降低组合波动"
+              manager: "0xdef456def456def456def456def456def456def4"
+              vaultAddress: "0xdef456def456def456def456def456def456def4"
+              createdAt: "2026-01-20T09:10:00Z"
+              status: STOPPED
+              riskProfile: MEDIUM
+              marketUniverse: [Macro, Volatility]
+              rebalanceRule: Daily volatility targeting
+              minimumDeposit: 800
+              minimumRedeem: 250
+              managementFeeRate: 0.02
+              performanceFeeRate: 0.12
+              autoStopLossPct: 0.08
+              currentNav: 0.96
+              cumulativeReturnPct: -0.041
+              maxDrawdownPct: -0.121
+              aum: 620000
+              investorCount: 141
+            - fundId: 3
+              fundName: "Global Event Opportunities"
+              fundDescription: "围绕全球事件驱动机会进行主动配置"
+              manager: "0x987fed987fed987fed987fed987fed987fed987f"
+              vaultAddress: "0x987fed987fed987fed987fed987fed987fed987f"
+              createdAt: "2026-01-28T06:25:00Z"
+              status: STOPPED
+              riskProfile: MEDIUM
+              marketUniverse: [Global Events]
+              rebalanceRule: Event-driven active rebalance
+              minimumDeposit: 500
+              minimumRedeem: 200
+              managementFeeRate: 0.015
+              performanceFeeRate: 0.15
+              autoStopLossPct: 0.06
+              currentNav: 0.89
+              cumulativeReturnPct: -0.137
+              maxDrawdownPct: -0.183
+              aum: 410000
+              investorCount: 97
       properties:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/ManagerFundOverviewResponse'
+            $ref: "#/components/schemas/ManagerFundDetailResponse"
         pagination:
-          $ref: '#/components/schemas/PaginationResponse'
+          $ref: "#/components/schemas/PaginationResponse"
 
-    ManagerOverviewDataResponse:
+    ManagerSummaryResponse:
       type: object
-      required: [managedFundCount, totalAum, totalInvestorCount, totalInvestedAmount]
+      required: [fundCount, totalInvestorCount, totalInvested, totalValue]
       properties:
-        managedFundCount:
+        fundCount:
           type: integer
           description: 管理基金数
-        totalAum:
-          type: number
-          description: 总管理规模（单位USDC）
+          minimum: 0
         totalInvestorCount:
           type: integer
           description: 总投资人数
-        totalInvestedAmount:
+          minimum: 0
+        totalInvested:
           type: number
           description: 总投资金额（单位USDC）
+        totalValue:
+          type: number
+          description: 当前总价值（单位USDC）
       examples:
-        - managedFundCount: 3
-          totalAum: 3200000
+        - fundCount: 3
           totalInvestorCount: 1260
-          totalInvestedAmount: 3050000
+          totalInvested: 3050000
+          totalValue: 3200000
 
     CreateFundDataResponse:
       type: object
@@ -848,12 +1406,13 @@ components:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/IntentResponse'
+            $ref: "#/components/schemas/IntentResponse"
         pagination:
-          $ref: '#/components/schemas/PaginationResponse'
+          $ref: "#/components/schemas/PaginationResponse"
       examples:
         - items:
             - intentId: "intent_10001"
+              createdAt: "2026-02-16T09:05:00Z"
               deferExec: false
               order:
                 tokenId: "52131203329998207510016525064140580388668921672474814275063839342530145683684"
@@ -865,7 +1424,7 @@ components:
           pagination:
             page: 1
             pageSize: 20
-            total: 42
+            totalItems: 42
             totalPages: 3
 
     ApiErrorResponse:
@@ -887,7 +1446,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ApiErrorResponse'
+            $ref: "#/components/schemas/ApiErrorResponse"
 
   parameters:
     PageParam:
@@ -906,7 +1465,6 @@ components:
         minimum: 1
 
 paths:
-
   /auth/nonce:
     post:
       tags:
@@ -916,32 +1474,32 @@ paths:
       description: |
         生成一个短时有效的 nonce，并绑定完整 SIWE 上下文
         （address、chainId、domain）。
+        nonce 必须符合 SIWE 规范：仅允许字母数字，长度至少 8 位。
       security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AuthNonceRequest'
+              $ref: "#/components/schemas/AuthNonceRequest"
       responses:
-        '200':
+        "200":
           description: nonce 已生成
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/ApiSuccessResponse'
+                  - $ref: "#/components/schemas/ApiSuccessResponse"
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/AuthNonceDataResponse'
-        '400':
+                        $ref: "#/components/schemas/AuthNonceDataResponse"
+        "400":
           description: 请求参数无效（返回错误码和错误信息）
-        '429':
+        "429":
           description: 请求过于频繁，已限流（返回错误码和错误信息）
         default:
-          $ref: '#/components/responses/DefaultError'
-
+          $ref: "#/components/responses/DefaultError"
 
   /auth/login:
     post:
@@ -957,24 +1515,48 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AuthLoginRequest'
+              $ref: "#/components/schemas/AuthLoginRequest"
       responses:
-        '200':
-          description: JWT 已签发
+        "200":
+          description: JWT 与用户身份信息已签发
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/ApiSuccessResponse'
+                  - $ref: "#/components/schemas/ApiSuccessResponse"
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/AuthLoginDataResponse'
-        '401':
+                        $ref: "#/components/schemas/AuthLoginDataResponse"
+        "401":
           description: 签名无效或 nonce 不匹配（返回错误码和错误信息）
         default:
-          $ref: '#/components/responses/DefaultError'
+          $ref: "#/components/responses/DefaultError"
 
+  /auth/logout:
+    post:
+      tags:
+        - auth
+      summary: 退出登录
+      operationId: logout
+      description: |
+        使当前访问令牌失效，并结束当前登录会话。
+      responses:
+        "200":
+          description: 已退出登录
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiSuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/EmptyDataResponse"
+        "401":
+          description: 未登录或令牌无效（返回错误码和错误信息）
+        default:
+          $ref: "#/components/responses/DefaultError"
 
   /user/profile:
     get:
@@ -983,52 +1565,31 @@ paths:
       summary: 获取当前用户信息
       operationId: getUserProfile
       responses:
-        '200':
+        "200":
           description: 用户信息
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/ApiSuccessResponse'
+                  - $ref: "#/components/schemas/ApiSuccessResponse"
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/UserProfileDataResponse'
+                        $ref: "#/components/schemas/UserProfileResponse"
         default:
-          $ref: '#/components/responses/DefaultError'
+          $ref: "#/components/responses/DefaultError"
 
-  /user/apply-manager:
-    post:
-      tags:
-        - user
-      summary: 申请成为基金经理
-      operationId: applyManagerRole
-      responses:
-        '200':
-          description: 申请已提交
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiSuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/EmptyDataResponse'
-        default:
-          $ref: '#/components/responses/DefaultError'
-
-  /funds:
+  /market/funds:
     get:
       tags:
-        - fund
+        - market
       summary: 获取基金列表
       operationId: listFunds
       security: []
       parameters:
         - name: keyword
           in: query
-          description: 关键词（用于按基金ID或基金经理地址检索）
+          description: 关键词（用于按 fundName 或 manager 地址检索）
           schema:
             type: string
         - name: status
@@ -1037,8 +1598,8 @@ paths:
           schema:
             type: string
             enum: [RUNNING, STOPPED]
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/PageSizeParam'
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
         - name: sortBy
           in: query
           description: 排序字段
@@ -1053,26 +1614,48 @@ paths:
             enum: [ASC, DESC]
             default: DESC
       responses:
-        '200':
+        "200":
           description: 基金列表
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/ApiSuccessResponse'
+                  - $ref: "#/components/schemas/ApiSuccessResponse"
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/FundSummaryListDataResponse'
+                        $ref: "#/components/schemas/FundsListResponse"
         default:
-          $ref: '#/components/responses/DefaultError'
+          $ref: "#/components/responses/DefaultError"
 
-  /funds/{fundId}/overview:
+  /market/summary:
     get:
       tags:
-        - fund
+        - market
+      summary: 获取全平台市场汇总
+      operationId: getMarketSummary
+      security: []
+      responses:
+        "200":
+          description: 全平台基金汇总
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiSuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/MarketSummaryResponse"
+        default:
+          $ref: "#/components/responses/DefaultError"
+
+  /market/funds/{fundId}/detail:
+    get:
+      tags:
+        - market
       summary: 获取基金详情
-      operationId: getFundOverview
+      operationId: getFundDetail
       security: []
       parameters:
         - name: fundId
@@ -1083,24 +1666,78 @@ paths:
             type: integer
             format: int64
       responses:
-        '200':
+        "200":
           description: 基金详情
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/ApiSuccessResponse'
+                  - $ref: "#/components/schemas/ApiSuccessResponse"
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/FundOverviewDataResponse'
+                        $ref: "#/components/schemas/FundDetailResponse"
+              example:
+                code: 0
+                message: success
+                data:
+                  fundId: 1
+                  fundName: US Election Alpha
+                  fundDescription: 聚焦美国大选相关预测市场的主动管理策略基金
+                  manager: "0xabc123abc123abc123abc123abc123abc123abc1"
+                  vaultAddress: "0x950e1f915919791cffe9fd2e5555dea7e7ce7c57"
+                  createdAt: "2026-01-15T14:30:00Z"
+                  status: RUNNING
+                  riskProfile: MEDIUM_HIGH
+                  marketUniverse: [Politics, Macro, Crypto Events]
+                  rebalanceRule: Weekly + event-driven rebalance
+                  minimumDeposit: 1000
+                  minimumRedeem: 300
+                  managementFeeRate: 0.02
+                  performanceFeeRate: 0.2
+                  autoStopLossPct: 0.1
+                  currentNav: 1.15
+                  cumulativeReturnPct: 0.123
+                  maxDrawdownPct: -0.094
+                  aum: 1000000
+                  investorCount: 368
         default:
-          $ref: '#/components/responses/DefaultError'
+          $ref: "#/components/responses/DefaultError"
 
-  /funds/{fundId}/positions:
+  /market/funds/{fundId}/performance:
     get:
       tags:
-        - fund
+        - market
+      summary: 获取基金业绩曲线
+      operationId: getFundPerformance
+      security: []
+      parameters:
+        - name: fundId
+          in: path
+          required: true
+          description: 基金ID
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: 基金业绩曲线
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiSuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/FundPerformanceResponse"
+        default:
+          $ref: "#/components/responses/DefaultError"
+
+  /market/funds/{fundId}/positions:
+    get:
+      tags:
+        - market
       summary: 获取基金持仓列表
       operationId: listFundPositions
       security: []
@@ -1112,27 +1749,63 @@ paths:
           schema:
             type: integer
             format: int64
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/PageSizeParam'
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
       responses:
-        '200':
+        "200":
           description: 基金持仓列表
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/ApiSuccessResponse'
+                  - $ref: "#/components/schemas/ApiSuccessResponse"
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/FundPositionListResponse'
+                        $ref: "#/components/schemas/FundPositionListResponse"
         default:
-          $ref: '#/components/responses/DefaultError'
+          $ref: "#/components/responses/DefaultError"
 
-  /funds/{fundId}/investor-rankings:
+  /market/funds/{fundId}/cash-reserve:
     get:
       tags:
-        - fund
+        - market
+      summary: 获取基金现金储备信息
+      operationId: getFundCashReserve
+      security: []
+      parameters:
+        - name: fundId
+          in: path
+          required: true
+          description: 基金ID
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: 基金现金储备信息
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiSuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/FundCashReserveResponse"
+              example:
+                code: 0
+                message: success
+                data:
+                  allocationPct: 0.29
+                  currentValue: 730800
+        default:
+          $ref: "#/components/responses/DefaultError"
+
+  /market/funds/{fundId}/investor-rankings:
+    get:
+      tags:
+        - market
       summary: 获取基金投资人排名
       operationId: listFundInvestorRankings
       security: []
@@ -1144,29 +1817,40 @@ paths:
           schema:
             type: integer
             format: int64
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/PageSizeParam'
+        - name: status
+          in: query
+          required: false
+          description: 按交易状态过滤（可多选，逗号分隔：PENDING,SETTLED,CANCELED）
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [PENDING, SETTLED, CANCELED]
+          style: form
+          explode: false
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
       responses:
-        '200':
+        "200":
           description: 基金投资人排名
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/ApiSuccessResponse'
+                  - $ref: "#/components/schemas/ApiSuccessResponse"
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/FundInvestorRankingListResponse'
+                        $ref: "#/components/schemas/FundInvestorRankingListResponse"
         default:
-          $ref: '#/components/responses/DefaultError'
+          $ref: "#/components/responses/DefaultError"
 
-  /funds/{fundId}/deposit-redemption-records:
+  /market/funds/{fundId}/transactions:
     get:
       tags:
-        - fund
-      summary: 获取基金申赎记录列表
-      operationId: listFundDepositRedemptionRecords
+        - market
+      summary: 获取基金交易记录列表
+      operationId: listFundTransactions
       security: []
       parameters:
         - name: fundId
@@ -1176,43 +1860,22 @@ paths:
           schema:
             type: integer
             format: int64
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/PageSizeParam'
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
       responses:
-        '200':
-          description: 基金申赎记录列表
+        "200":
+          description: 基金交易记录列表
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/ApiSuccessResponse'
+                  - $ref: "#/components/schemas/ApiSuccessResponse"
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/FundDepositRedemptionRecordListResponse'
+                        $ref: "#/components/schemas/FundTransactionListResponse"
         default:
-          $ref: '#/components/responses/DefaultError'
-
-  /investment/overview:
-    get:
-      tags:
-        - investment
-      summary: 获取投资组合
-      operationId: getInvestmentOverview
-      responses:
-        '200':
-          description: 投资组合信息
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiSuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/InvestmentOverviewResponse'
-        default:
-          $ref: '#/components/responses/DefaultError'
+          $ref: "#/components/responses/DefaultError"
 
   /investment/funds:
     get:
@@ -1221,24 +1884,50 @@ paths:
       summary: 获取已投资基金列表
       operationId: listInvestmentFunds
       parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/PageSizeParam'
+        - name: keyword
+          in: query
+          description: 关键词（用于按 fundName 或 manager 地址检索）
+          schema:
+            type: string
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
       responses:
-        '200':
+        "200":
           description: 已投资基金列表
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/ApiSuccessResponse'
+                  - $ref: "#/components/schemas/ApiSuccessResponse"
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/InvestmentFundListResponse'
+                        $ref: "#/components/schemas/InvestmentFundsListResponse"
         default:
-          $ref: '#/components/responses/DefaultError'
+          $ref: "#/components/responses/DefaultError"
 
-  /investment/{fundId}:
+  /investment/summary:
+    get:
+      tags:
+        - investment
+      summary: 获取投资总览
+      operationId: getInvestmentSummary
+      responses:
+        "200":
+          description: 投资总览信息
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiSuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/InvestmentSummaryResponse"
+        default:
+          $ref: "#/components/responses/DefaultError"
+
+  /investment/funds/{fundId}/detail:
     get:
       tags:
         - investment
@@ -1253,26 +1942,60 @@ paths:
             type: integer
             format: int64
       responses:
-        '200':
+        "200":
           description: 投资详情
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/ApiSuccessResponse'
+                  - $ref: "#/components/schemas/ApiSuccessResponse"
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/InvestmentDetailDataResponse'
+                        $ref: "#/components/schemas/InvestmentFundDetailResponse"
+              examples:
+                success:
+                  summary: 投资详情示例
+                  value:
+                    code: 0
+                    message: success
+                    data:
+                      fundId: 1
+                      fundName: US Election Alpha
+                      fundDescription: 聚焦美国大选相关预测市场的主动管理策略基金
+                      manager: "0xabc123abc123abc123abc123abc123abc123abc1"
+                      vaultAddress: "0x950e1f915919791cffe9fd2e5555dea7e7ce7c57"
+                      createdAt: "2026-01-15T14:30:00Z"
+                      riskProfile: MEDIUM_HIGH
+                      marketUniverse: [Politics, Macro, Crypto Events]
+                      rebalanceRule: Weekly + event-driven rebalance
+                      minimumDeposit: 1000
+                      minimumRedeem: 300
+                      managementFeeRate: 0.02
+                      performanceFeeRate: 0.2
+                      autoStopLossPct: 0.1
+                      status: RUNNING
+                      currentNav: 1.142
+                      holdingShares: 45231.8
+                      totalDeposits: 56000
+                      totalRedeems: 14000
+                      netInvested: 42000
+                      currentValue: 53200
+                      totalPnl: 11200
+                      totalPnlPct: 0.2667
+                      unrealizedPnl: 8700
+                      unrealizedPnlPct: 0.1952
+                      realizedPnl: 2500
+                      realizedPnlPct: 0.0595
         default:
-          $ref: '#/components/responses/DefaultError'
+          $ref: "#/components/responses/DefaultError"
 
-  /investment/{fundId}/deposit-redemption-records:
+  /investment/funds/{fundId}/value-trend:
     get:
       tags:
         - investment
-      summary: 获取投资申赎记录列表
-      operationId: listInvestmentDepositRedemptionRecords
+      summary: 获取投资价值走势
+      operationId: getInvestmentValueTrend
       parameters:
         - name: fundId
           in: path
@@ -1281,22 +2004,112 @@ paths:
           schema:
             type: integer
             format: int64
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/PageSizeParam'
       responses:
-        '200':
-          description: 投资申赎记录列表
+        "200":
+          description: 投资价值走势
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/ApiSuccessResponse'
+                  - $ref: "#/components/schemas/ApiSuccessResponse"
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/InvestmentDepositRedemptionListResponse'
+                        $ref: "#/components/schemas/InvestmentFundValueTrendResponse"
         default:
-          $ref: '#/components/responses/DefaultError'
+          $ref: "#/components/responses/DefaultError"
+
+  /investment/funds/{fundId}/transactions:
+    get:
+      tags:
+        - investment
+      summary: 获取交易记录
+      operationId: listInvestmentRecentTransactions
+      parameters:
+        - name: fundId
+          in: path
+          required: true
+          description: 基金ID
+          schema:
+            type: integer
+            format: int64
+        - name: status
+          in: query
+          required: false
+          description: 按交易状态过滤（可多选，逗号分隔：PENDING,SETTLED,CANCELED）
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [PENDING, SETTLED, CANCELED]
+          style: form
+          explode: false
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+      responses:
+        "200":
+          description: 交易记录
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiSuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/InvestmentFundTransactionListResponse"
+        default:
+          $ref: "#/components/responses/DefaultError"
+
+  /investment/funds/{fundId}/transactions/{transactionId}/cancel:
+    post:
+      tags:
+        - investment
+      summary: 撤销交易
+      operationId: cancelInvestmentTransaction
+      parameters:
+        - name: fundId
+          in: path
+          required: true
+          description: 基金ID
+          schema:
+            type: integer
+            format: int64
+        - name: transactionId
+          in: path
+          required: true
+          description: 交易ID
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: 撤销成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiSuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/InvestmentFundTransactionResponse"
+              examples:
+                success:
+                  summary: 撤销交易成功示例
+                  value:
+                    code: 0
+                    message: success
+                    data:
+                      id: 10003
+                      timestamp: "2026-02-09T19:21:00Z"
+                      type: DEPOSIT
+                      amount: 8000
+                      shares: null
+                      executedNav: null
+                      status: CANCELED
+        default:
+          $ref: "#/components/responses/DefaultError"
 
   /manager/funds:
     get:
@@ -1305,22 +2118,27 @@ paths:
       summary: 获取我管理的基金列表
       operationId: listManagerFunds
       parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/PageSizeParam'
+        - name: keyword
+          in: query
+          description: 关键词（用于按 fundName 或 fundId 检索）
+          schema:
+            type: string
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
       responses:
-        '200':
+        "200":
           description: 我管理的基金列表
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/ApiSuccessResponse'
+                  - $ref: "#/components/schemas/ApiSuccessResponse"
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/ManagerFundListResponse'
+                        $ref: "#/components/schemas/ManagerFundsListResponse"
         default:
-          $ref: '#/components/responses/DefaultError'
+          $ref: "#/components/responses/DefaultError"
 
     post:
       tags:
@@ -1332,71 +2150,42 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateFundRequest'
+              $ref: "#/components/schemas/CreateFundRequest"
       responses:
-        '200':
+        "200":
           description: 基金已创建
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/ApiSuccessResponse'
+                  - $ref: "#/components/schemas/ApiSuccessResponse"
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/CreateFundDataResponse'
+                        $ref: "#/components/schemas/CreateFundDataResponse"
         default:
-          $ref: '#/components/responses/DefaultError'
+          $ref: "#/components/responses/DefaultError"
 
-  /manager/overview:
+  /manager/summary:
     get:
       tags:
         - manager
       summary: 获取基金经理概览
-      operationId: getManagerOverview
+      operationId: getManagerSummary
       responses:
-        '200':
+        "200":
           description: 基金经理概览
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/ApiSuccessResponse'
+                  - $ref: "#/components/schemas/ApiSuccessResponse"
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/ManagerOverviewDataResponse'
+                        $ref: "#/components/schemas/ManagerSummaryResponse"
         default:
-          $ref: '#/components/responses/DefaultError'
-
-  /manager/{fundId}/overview:
-    get:
-      tags:
-        - manager
-      summary: 获取单只基金详情（经理视角）
-      operationId: getManagerFundOverview
-      parameters:
-        - name: fundId
-          in: path
-          required: true
-          description: 基金ID
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: 基金详情（经理视角）
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiSuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/ManagerFundOverviewResponse'
-        default:
-          $ref: '#/components/responses/DefaultError'
+          $ref: "#/components/responses/DefaultError"
 
   /manager/ai-pick:
     post:
@@ -1409,23 +2198,23 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AiPickRequest'
+              $ref: "#/components/schemas/AiPickRequest"
       responses:
-        '200':
+        "200":
           description: 建议文本
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/ApiSuccessResponse'
+                  - $ref: "#/components/schemas/ApiSuccessResponse"
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/AiPickDataResponse'
+                        $ref: "#/components/schemas/AiPickDataResponse"
         default:
-          $ref: '#/components/responses/DefaultError'
+          $ref: "#/components/responses/DefaultError"
 
-  /manager/{fundId}/intents:
+  /manager/funds/{fundId}/intents:
     parameters:
       - name: fundId
         in: path
@@ -1444,21 +2233,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/IntentRequest'
+              $ref: "#/components/schemas/IntentRequest"
       responses:
-        '200':
+        "200":
           description: 交易意图已受理
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/ApiSuccessResponse'
+                  - $ref: "#/components/schemas/ApiSuccessResponse"
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/IntentResponse'
+                        $ref: "#/components/schemas/IntentResponse"
         default:
-          $ref: '#/components/responses/DefaultError'
+          $ref: "#/components/responses/DefaultError"
 
     get:
       tags:
@@ -1473,19 +2262,19 @@ paths:
           schema:
             type: integer
             format: int64
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/PageSizeParam'
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
       responses:
-        '200':
+        "200":
           description: 交易意图列表
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/ApiSuccessResponse'
+                  - $ref: "#/components/schemas/ApiSuccessResponse"
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/IntentListResponse'
+                        $ref: "#/components/schemas/IntentListResponse"
         default:
-          $ref: '#/components/responses/DefaultError'
+          $ref: "#/components/responses/DefaultError"
